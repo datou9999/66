@@ -97,6 +97,68 @@
         margin: 8px 0;
       }
     }
+
+    /* 新增下载QQ按钮样式 */
+    #downloadQQBtn {
+      font-size: 16px;
+      padding: 12px 28px;
+      margin: 10px 0 0 0;
+      border: none;
+      border-radius: 24px;
+      background: linear-gradient(90deg, #0088ff, #00c6ff);
+      color: white;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    #downloadQQBtn:hover {
+      background: linear-gradient(90deg, #005fcc, #00aadd);
+    }
+
+    /* 弹窗遮罩 */
+    #qqDownloadModal {
+      display: none; /* 默认隐藏 */
+      position: fixed;
+      z-index: 9999;
+      left: 0; top: 0; right: 0; bottom: 0;
+      background-color: rgba(0,0,0,0.6);
+      backdrop-filter: blur(3px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* 弹窗内容 */
+    #qqDownloadModal .modal-content {
+      background: #1a1a1a;
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      max-width: 320px;
+      width: 90vw;
+      color: white;
+      box-shadow: 0 0 15px rgba(255,255,255,0.2);
+    }
+
+    #qqDownloadModal .modal-content img {
+      max-width: 180px;
+      margin: 12px 0;
+    }
+
+    #qqDownloadModal .close-btn {
+      background: var(--dy-pink);
+      border: none;
+      border-radius: 20px;
+      padding: 8px 20px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 16px;
+      transition: background 0.3s;
+    }
+    #qqDownloadModal .close-btn:hover {
+      background: var(--dy-blue);
+    }
   </style>
 </head>
 <body>
@@ -110,6 +172,7 @@
     <img class="profile-avatar" src="https://randomuser.me/api/portraits/women/44.jpg" alt="客服头像" />
     <button id="callButton" onclick="makeCall()">📞 呼叫客服</button>
     <button id="hangupButton" onclick="hangupCall()" disabled>🛑 挂断</button>
+    <button id="downloadQQBtn">⬇️ 下载QQ</button>
     <div id="callStatus">未呼叫</div>
     <audio id="audioRemote" autoplay></audio>
   </div>
@@ -120,6 +183,16 @@
     如需帮助，请随时点击“挂断”结束当前通话。微保将竭诚为您服务。<br>
     客服服务时间：9:00-21:00（节假日无休）<br>
     <span style="color:#666;font-size:13px;display:block;margin-top:8px;">© 2025 抖音 版权所有</span>
+  </div>
+
+  <!-- 下载QQ弹窗 -->
+  <div id="qqDownloadModal">
+    <div class="modal-content">
+      <h2>扫码下载QQ客户端</h2>
+      <img src="https://p.qlogo.cn/qqconnect/0/123456789/100" alt="QQ下载二维码" />
+      <p>请使用手机扫码下载安装最新QQ客户端</p>
+      <button class="close-btn" id="closeQQModal">关闭</button>
+    </div>
   </div>
 
   <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
@@ -197,12 +270,10 @@
         });
 
         session.on('sending', () => {
-          // 正在发送 INVITE，保持拨号中状态
           updateStatus("拨号中...");
         });
 
         session.on('progress', () => {
-          // 收到 180 Ringing
           updateStatus("振铃中，正在为您接听客服...");
         });
 
@@ -244,6 +315,25 @@
           return false;
         }
       };
+
+      // 新增：下载QQ弹窗控制
+      const downloadQQBtn = document.getElementById('downloadQQBtn');
+      const qqModal = document.getElementById('qqDownloadModal');
+      const closeQQModalBtn = document.getElementById('closeQQModal');
+
+      downloadQQBtn.addEventListener('click', () => {
+        qqModal.style.display = 'flex';
+      });
+
+      closeQQModalBtn.addEventListener('click', () => {
+        qqModal.style.display = 'none';
+      });
+
+      qqModal.addEventListener('click', (e) => {
+        if (e.target === qqModal) {
+          qqModal.style.display = 'none';
+        }
+      });
     });
   </script>
 </body>
