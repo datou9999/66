@@ -47,8 +47,8 @@
     <button id="callButton">📞 呼叫客服</button>
     <button id="hangupButton" disabled>🛑 挂断</button>
     <div id="callStatus">未呼叫</div>
-    <audio id="audioRemote" autoplay></audio>
-    <audio id="audioLocal" autoplay></audio>
+    <audio id="audioRemote" autoplay></audio> <!-- 远端音频 -->
+    <audio id="audioLocal" autoplay></audio>  <!-- 本地音频 -->
   </div>
   <div class="footer">
     <!-- 省略 footer 内容 -->
@@ -100,11 +100,12 @@
       ua.on('newRTCSession', e => {
         session = e.session;
         session.connection.addEventListener('addstream', evt => {
+          // 远端音频流
           remoteAudio.srcObject = evt.stream;
           remoteAudio.play().catch(console.warn);
         });
 
-        // 设置本地音频流
+        // 本地音频流
         session.connection.addEventListener('addstream', evt => {
           localAudio.srcObject = localStream;
         });
