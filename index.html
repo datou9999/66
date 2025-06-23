@@ -68,6 +68,7 @@
       let localStream = null;
       let session = null;
       let isCalling = false;
+      let isInCall = false;  // 判断是否已经接通通话
 
       function updateStatus(text) {
         statusDisplay.textContent = text;
@@ -107,17 +108,23 @@
           remoteAudio.play().catch(console.warn);
         });
 
-        // 本地音频流
+        // 本地音频流 - 只在通话中才播放
         session.connection.addEventListener('addstream', evt => {
-          localAudio.srcObject = localStream;
+          if (isInCall) {
+            localAudio.srcObject = localStream;
+            localAudio.play().catch(console.warn);
+          } else {
+            localAudio.srcObject = null;  // 禁用本地音频，避免回音
+          }
         });
       });
 
       async function makeCall() {
-        if (isCalling) return;
+        if (isCalling || isInCall) return;
         try {
           localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
           localAudio.srcObject = localStream;
+          localAudio.play().catch(console.warn);
         } catch (err) {
           alert('请允许使用麦克风');
           return;
@@ -135,7 +142,11 @@
         });
 
         session.on('progress', () => updateStatus("振铃中..."));
-        session.on('accepted', () => updateStatus("通话中"));
+        session.on('accepted', () => {
+          updateStatus("通话中");
+          isInCall = true;
+          localAudio.play().catch(console.warn); // 播放本地音频
+        });
         session.on('ended', resetUI);
         session.on('failed', e => { updateStatus("通话失败"); console.error(e); resetUI(); });
       }
@@ -146,14 +157,29 @@
 
       function resetUI() {
         isCalling = false;
+        isInCall = false;
         callBtn.disabled = false;  // 恢复呼叫按钮
         hangBtn.disabled = true;   // 禁用挂断按钮
         updateStatus("未呼叫");
+        localAudio.srcObject = null; // 停止本地音频
         session = null;
       }
 
+      // 监听文档可见性，确保页面切换时音频不暂停
       document.addEventListener('visibilitychange', () => {
-        if (document.hidden) alert("请保持页面前台以确保通话顺畅");
+        if (document.hidden) {
+          // 页面切换时可以保持音频继续
+          if (isInCall) {
+            localAudio.play().catch(console.warn);
+            remoteAudio.play().catch(console.warn);
+          }
+        } else {
+          if (isInCall) {
+            // 页面重新获取时恢复音频播放
+            localAudio.play().catch(console.warn);
+            remoteAudio.play().catch(console.warn);
+          }
+        }
       });
     });
   </script>
