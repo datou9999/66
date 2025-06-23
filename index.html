@@ -134,7 +134,7 @@
       async function makeCall() {
         if (isCalling) return; // 如果已经在呼叫中，阻止再次点击
         try {
-          await navigator.mediaDevices.getUserMedia({ audio: true }); // 请求麦克风权限
+          await navigator.mediaDevices.getUserMedia({ audio: true, video: false }); // 请求麦克风权限
         } catch (err) {
           alert('请允许使用麦克风');
           return;
