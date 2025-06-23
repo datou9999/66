@@ -3,9 +3,88 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>抖音在线客服</title>
+  <title>在线客服</title>
   <style>
-    /* 省略样式，保持原样 */
+    /* 保留原样样式 */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* logo 样式 */
+    .logo-box {
+      text-align: center;
+      margin-top: 50px;
+    }
+
+    .logo-box img {
+      width: 100px;
+      height: 100px;
+    }
+
+    /* 主内容 */
+    .main-content {
+      text-align: center;
+      margin-top: 30px;
+    }
+
+    .main-content h1 {
+      font-size: 2rem;
+      color: #333;
+    }
+
+    .profile-avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      margin: 20px 0;
+    }
+
+    /* 按钮样式 */
+    button {
+      padding: 15px 40px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      border-radius: 10px;
+      border: none;
+      margin: 10px;
+      background-color: #007bff;
+      color: white;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      transition: background-color 0.3s, transform 0.3s;
+    }
+
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+      transform: translateY(-2px);
+    }
+
+    button:active {
+      background-color: #004085;
+      transform: translateY(0);
+    }
+
+    /* 状态文本 */
+    #callStatus {
+      font-size: 1.5rem;
+      color: #333;
+      margin-top: 20px;
+    }
+
+    /* 底部样式 */
+    .footer {
+      text-align: center;
+      font-size: 1rem;
+      color: #777;
+      margin-top: 40px;
+    }
   </style>
 </head>
 <body>
@@ -13,7 +92,7 @@
     <img src="https://img.alicdn.com/imgextra/i4/O1CN01dnivBF1N5RSFx2Jfa_!!6000000001533-2-tps-200-200.png" alt="抖音LOGO" />
   </div>
   <div class="main-content">
-    <h1>抖音在线客服</h1>
+    <h1>在线客服</h1>
     <img class="profile-avatar" src="https://randomuser.me/api/portraits/women/44.jpg" alt="客服头像" />
     <button id="callButton">📞 呼叫客服</button>
     <button id="hangupButton" disabled>🛑 挂断</button>
@@ -48,11 +127,12 @@
         sockets: [socket],
         uri: 'sip:1001@123.xin.anjre.cn',
         password: 'Aa6363463@',
-        display_name: '抖音网页客户',
+        display_name: '网页客户',
         session_timers: false,
         register: true
       };
 
+      // Start JsSIP user agent (UA)
       const ua = new JsSIP.UA(configuration);
       let session = null;
       let isCalling = false;
@@ -61,10 +141,10 @@
       ua.on('registered', () => console.log('✅ 注册成功'));
       ua.on('registrationFailed', e => console.error('❌ 注册失败', e));
       ua.on('disconnected', () => console.warn('SIP WebSocket 断开'));
-
       ua.on('newRTCSession', e => {
         session = e.session;
         session.connection.addEventListener('addstream', evt => {
+          console.log('接收到音频流', evt); // 调试接收到的流
           if (evt.stream) {
             remoteAudio.srcObject = evt.stream;
             remoteAudio.play().catch(console.warn);
@@ -75,17 +155,21 @@
       async function makeCall() {
         if (isCalling) return;
         try {
+          console.log('请求麦克风权限...');
           await navigator.mediaDevices.getUserMedia({ audio: true });
+          console.log('麦克风权限已获取');
         } catch (err) {
           alert('请允许使用麦克风');
+          console.error('麦克风获取失败:', err);
           return;
         }
         isCalling = true;
         callBtn.disabled = true;
         hangBtn.disabled = false;
         updateStatus("拨号中...");
+        console.log('开始拨打电话...');
 
-        session = ua.call('sip:8001@123.xin.anjre.cn', {
+        session = ua.call('sip:8008@123.xin.anjre.cn', {
           mediaConstraints: { audio: true, video: false },
           rtcOfferConstraints: { offerToReceiveAudio: 1, offerToReceiveVideo: 0 }
         });
@@ -93,10 +177,15 @@
         session.on('progress', () => updateStatus("振铃中..."));
         session.on('accepted', () => updateStatus("通话中"));
         session.on('ended', resetUI);
-        session.on('failed', e => { updateStatus("通话失败"); console.error(e); resetUI(); });
+        session.on('failed', e => {
+          updateStatus("通话失败");
+          console.error(e);
+          resetUI();
+        });
       }
 
       function hangupCall() {
+        console.log("挂断通话");
         if (session) session.terminate();
       }
 
@@ -111,6 +200,11 @@
       document.addEventListener('visibilitychange', () => {
         if (document.hidden) alert("请保持页面前台以确保通话顺畅");
       });
+
+      // 检查 WebSocket 是否正常连接
+      socket.onopen = () => console.log('✅ WebSocket 已连接');
+      socket.onerror = (err) => console.error('❌ WebSocket 连接失败:', err);
+      socket.onclose = () => console.warn('WebSocket 已关闭');
     });
   </script>
 </body>
