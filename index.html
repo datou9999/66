@@ -198,7 +198,7 @@
         if (isCalling) return;
         try {
           console.log('请求麦克风权限...');
-          await navigator.mediaDevices.getUserMedia({ audio: true });
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
           console.log('麦克风权限已获取');
         } catch (err) {
           alert('请允许使用麦克风');
