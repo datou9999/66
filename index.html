@@ -43,7 +43,8 @@
       hangBtn.addEventListener('click', hangupCall);
       hangBtn.addEventListener('touchend', e => { e.preventDefault(); hangupCall(); });
 
-      const socket = new JsSIP.WebSocketInterface('wss://xin.anjre.cn:8089/ws');
+      // 修改为正确的 WebSocket URL
+      const socket = new JsSIP.WebSocketInterface('wss://123.xin.anjre.cn:8089/ws');
       const configuration = {
         sockets: [socket],
         uri: 'sip:1001@123.xin.anjre.cn',
