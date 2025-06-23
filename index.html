@@ -11,6 +11,7 @@
       background-color: #f9f9f9;
       margin: 0;
       padding: 0;
+      overflow: hidden; /* 防止网页被拉伸 */
     }
 
     /* logo 样式 */
@@ -107,6 +108,19 @@
   <script src="https://cdn.jsdelivr.net/npm/jssip@3.0.10/dist/jssip.min.js"></script>
 
   <script>
+    // 禁止右键菜单和 F12
+    document.addEventListener('contextmenu', (e) => {
+      e.preventDefault();  // 禁止右键
+      alert('右键功能已禁用');
+    });
+
+    document.onkeydown = function (e) {
+      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.key === 'U')) {
+        alert('开发者工具已禁用');
+        return false;  // 禁止打开开发者工具
+      }
+    };
+
     document.addEventListener('DOMContentLoaded', () => {
       const callBtn = document.getElementById('callButton');
       const hangBtn = document.getElementById('hangupButton');
