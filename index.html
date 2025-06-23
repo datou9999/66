@@ -79,7 +79,8 @@
       hangBtn.addEventListener('click', hangupCall);
       hangBtn.addEventListener('touchend', e => { e.preventDefault(); hangupCall(); });
 
-      const socket = new JsSIP.WebSocketInterface('wss://xin.anjre.cn:8089/ws');
+      // 配置 WebSocket URL
+      const socket = new JsSIP.WebSocketInterface('wss://123.xin.anjre.cn:8089/ws');
       const configuration = {
         sockets: [socket],
         uri: 'sip:1001@123.xin.anjre.cn',
@@ -99,8 +100,9 @@
 
       ua.on('newRTCSession', e => {
         session = e.session;
+
+        // 远端音频流
         session.connection.addEventListener('addstream', evt => {
-          // 远端音频流
           remoteAudio.srcObject = evt.stream;
           remoteAudio.play().catch(console.warn);
         });
@@ -122,8 +124,8 @@
         }
 
         isCalling = true;
-        callBtn.disabled = true;
-        hangBtn.disabled = false;
+        callBtn.disabled = true; // 禁用呼叫按钮
+        hangBtn.disabled = false; // 启用挂断按钮
         updateStatus("拨号中...");
 
         session = ua.call('sip:8001@123.xin.anjre.cn', {
@@ -144,8 +146,8 @@
 
       function resetUI() {
         isCalling = false;
-        callBtn.disabled = false;
-        hangBtn.disabled = true;
+        callBtn.disabled = false;  // 恢复呼叫按钮
+        hangBtn.disabled = true;   // 禁用挂断按钮
         updateStatus("未呼叫");
         session = null;
       }
