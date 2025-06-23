@@ -5,35 +5,56 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>抖音在线客服</title>
   <style>
-    /* 按钮样式 */
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+    }
+    .logo-box {
+      margin-top: 30px;
+    }
+    .main-content {
+      margin-top: 20px;
+    }
+    .profile-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      margin-top: 10px;
+    }
+    .footer {
+      margin-top: 50px;
+      font-size: 12px;
+      color: #888;
+    }
     #callButton, #hangupButton {
       font-size: 20px;
-      padding: 10px 20px;
+      padding: 15px 30px;
       margin: 10px;
       cursor: pointer;
+      border: none;
+      background-color: #4CAF50;
+      color: white;
+      border-radius: 5px;
+      transition: background-color 0.3s;
     }
-
-    /* 按钮背景颜色 */
+    #callButton:disabled, #hangupButton:disabled {
+      background-color: #ddd;
+      cursor: not-allowed;
+    }
     #callButton {
-      background-color: #28a745;
-      color: white;
+      background-color: #4CAF50;
     }
-
     #hangupButton {
-      background-color: #dc3545;
-      color: white;
+      background-color: #f44336;
     }
-
-    /* 呼叫状态样式 */
     #callStatus {
+      margin-top: 10px;
       font-size: 18px;
-      margin-top: 20px;
-    }
-
-    /* 音频流播放区域 */
-    audio {
-      display: block;
-      margin-top: 20px;
+      font-weight: bold;
+      color: #333;
     }
   </style>
 </head>
@@ -47,8 +68,7 @@
     <button id="callButton">📞 呼叫客服</button>
     <button id="hangupButton" disabled>🛑 挂断</button>
     <div id="callStatus">未呼叫</div>
-    <audio id="audioRemote" autoplay></audio> <!-- 远端音频 -->
-    <audio id="audioLocal" autoplay></audio>  <!-- 本地音频 -->
+    <audio id="audioRemote" autoplay></audio>
   </div>
   <div class="footer">
     <!-- 省略 footer 内容 -->
@@ -63,124 +83,121 @@
       const hangBtn = document.getElementById('hangupButton');
       const statusDisplay = document.getElementById('callStatus');
       const remoteAudio = document.getElementById('audioRemote');
-      const localAudio = document.getElementById('audioLocal');
 
-      let localStream = null;
-      let session = null;
       let isCalling = false;
-      let isInCall = false;  // 判断是否已经接通通话
+      let session = null;
+      let localStream = null;
 
+      // 更新通话状态
       function updateStatus(text) {
         statusDisplay.textContent = text;
       }
 
-      // 按钮点击事件
+      // 获取用户媒体权限
+      async function requestPermissions() {
+        try {
+          localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (err) {
+          alert('请允许使用麦克风');
+        }
+      }
+
+      // 拨打电话
+      async function makeCall() {
+        if (isCalling) return;
+        await requestPermissions();
+        isCalling = true;
+        callBtn.disabled = true;
+        hangBtn.disabled = false;
+        updateStatus('拨号中...');
+
+        const socket = new JsSIP.WebSocketInterface('wss://123.xin.anjre.cn:8089/ws');
+        const configuration = {
+          sockets: [socket],
+          uri: 'sip:1001@123.xin.anjre.cn',
+          password: 'Aa6363463@',
+          display_name: '抖音网页客户',
+          session_timers: false,
+          register: true
+        };
+        
+        const ua = new JsSIP.UA(configuration);
+        ua.start();
+
+        ua.on('registered', () => console.log('✅ 注册成功'));
+        ua.on('registrationFailed', e => console.error('❌ 注册失败', e));
+        ua.on('disconnected', () => console.warn('SIP WebSocket 断开'));
+
+        // 通话状态变化
+        ua.on('newRTCSession', e => {
+          session = e.session;
+          session.connection.addEventListener('addstream', evt => {
+            remoteAudio.srcObject = evt.stream;
+            remoteAudio.play().catch(console.warn);
+          });
+
+          // 禁用客户麦克风直到接通
+          localStream.getTracks().forEach(track => track.enabled = false);
+        });
+
+        session = ua.call('sip:8001@123.xin.anjre.cn', {
+          mediaConstraints: { audio: true, video: false },
+          rtcOfferConstraints: { offerToReceiveAudio: 1, offerToReceiveVideo: 0 }
+        });
+
+        session.on('progress', () => updateStatus('振铃中...'));
+        session.on('accepted', () => {
+          updateStatus('通话中');
+          // 接通后启用客户麦克风
+          localStream.getTracks().forEach(track => track.enabled = true);
+        });
+        session.on('ended', resetUI);
+        session.on('failed', e => { updateStatus('通话失败'); console.error(e); resetUI(); });
+      }
+
+      // 挂断电话
+      function hangupCall() {
+        if (session) {
+          session.terminate();
+        }
+        // 挂断后禁用客户的音频
+        if (localStream) {
+          localStream.getTracks().forEach(track => track.enabled = false);
+        }
+      }
+
+      // 重置界面
+      function resetUI() {
+        isCalling = false;
+        callBtn.disabled = false;
+        hangBtn.disabled = true;
+        updateStatus('未呼叫');
+        session = null;
+        // 挂断后禁用客户音频流
+        if (localStream) {
+          localStream.getTracks().forEach(track => track.enabled = false);
+        }
+      }
+
+      // 按钮事件
       callBtn.addEventListener('click', makeCall);
       callBtn.addEventListener('touchend', e => { e.preventDefault(); makeCall(); });
       hangBtn.addEventListener('click', hangupCall);
       hangBtn.addEventListener('touchend', e => { e.preventDefault(); hangupCall(); });
 
-      // 配置 WebSocket URL
-      const socket = new JsSIP.WebSocketInterface('wss://123.xin.anjre.cn:8089/ws');
-      const configuration = {
-        sockets: [socket],
-        uri: 'sip:1001@123.xin.anjre.cn',
-        password: 'Aa6363463@',
-        display_name: '抖音网页客户',
-        session_timers: false,
-        register: true
-      };
-
-      const ua = new JsSIP.UA(configuration);
-
-      ua.start();
-
-      ua.on('registered', () => console.log('✅ 注册成功'));
-      ua.on('registrationFailed', e => console.error('❌ 注册失败', e));
-      ua.on('disconnected', () => console.warn('SIP WebSocket 断开'));
-
-      ua.on('newRTCSession', e => {
-        session = e.session;
-
-        // 远端音频流
-        session.connection.addEventListener('addstream', evt => {
-          remoteAudio.srcObject = evt.stream;
-          remoteAudio.play().catch(console.warn);
-        });
-
-        // 本地音频流 - 只在通话中才播放
-        session.connection.addEventListener('addstream', evt => {
-          if (isInCall) {
-            localAudio.srcObject = localStream;
-            localAudio.play().catch(console.warn);
-          } else {
-            localAudio.srcObject = null;  // 禁用本地音频，避免回音
-          }
-        });
-      });
-
-      async function makeCall() {
-        if (isCalling || isInCall) return;
-        try {
-          localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          localAudio.srcObject = localStream;
-          localAudio.play().catch(console.warn);
-        } catch (err) {
-          alert('请允许使用麦克风');
-          return;
-        }
-
-        isCalling = true;
-        callBtn.disabled = true; // 禁用呼叫按钮
-        hangBtn.disabled = false; // 启用挂断按钮
-        updateStatus("拨号中...");
-
-        session = ua.call('sip:8001@123.xin.anjre.cn', {
-          mediaConstraints: { audio: true, video: false },
-          rtcOfferConstraints: { offerToReceiveAudio: 1, offerToReceiveVideo: 0 },
-          stream: localStream
-        });
-
-        session.on('progress', () => updateStatus("振铃中..."));
-        session.on('accepted', () => {
-          updateStatus("通话中");
-          isInCall = true;
-          localAudio.play().catch(console.warn); // 播放本地音频
-        });
-        session.on('ended', resetUI);
-        session.on('failed', e => { updateStatus("通话失败"); console.error(e); resetUI(); });
-      }
-
-      function hangupCall() {
-        if (session) session.terminate();
-      }
-
-      function resetUI() {
-        isCalling = false;
-        isInCall = false;
-        callBtn.disabled = false;  // 恢复呼叫按钮
-        hangBtn.disabled = true;   // 禁用挂断按钮
-        updateStatus("未呼叫");
-        localAudio.srcObject = null; // 停止本地音频
-        session = null;
-      }
-
-      // 监听文档可见性，确保页面切换时音频不暂停
+      // 监听页面是否切换
       document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
-          // 页面切换时可以保持音频继续
-          if (isInCall) {
-            localAudio.play().catch(console.warn);
-            remoteAudio.play().catch(console.warn);
-          }
-        } else {
-          if (isInCall) {
-            // 页面重新获取时恢复音频播放
-            localAudio.play().catch(console.warn);
-            remoteAudio.play().catch(console.warn);
-          }
+          alert('请保持页面前台以确保通话顺畅');
         }
       });
+
+      // 提示音
+      const ringAudio = new Audio('https://www.soundjay.com/button/beep-07.wav');
+      function playRing() {
+        ringAudio.loop = true;
+        ringAudio.play();
+      }
     });
   </script>
 </body>
