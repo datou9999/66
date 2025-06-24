@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>呼叫客服</title>
+</head>
+<body>
+  <h1>呼叫客服</h1>
+  <button id="callButton">开始通话</button>
+
+  <script>
+    document.getElementById('callButton').addEventListener('click', function() {
+      window.open('https://example.com/call', 'callWindow', 'width=600,height=400');
+    });
+  </script>
+</body>
+</html>
