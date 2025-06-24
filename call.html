@@ -1,18 +1,58 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>呼叫客服</title>
-</head>
-<body>
-  <h1>呼叫客服</h1>
-  <button id="callButton">开始通话</button>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>在线客服 - 通话中</title>
+  <style>
+    /* 保留原样样式 */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 0;
+      overflow: hidden; /* 防止网页被拉伸 */
+    }
 
-  <script>
-    document.getElementById('callButton').addEventListener('click', function() {
-      window.open('https://example.com/call', 'callWindow', 'width=600,height=400');
-    });
-  </script>
-</body>
-</html>
+    /* logo 样式 */
+    .logo-box {
+      text-align: center;
+      margin-top: 50px;
+    }
+
+    .logo-box img {
+      width: 100px;
+      height: 100px;
+    }
+
+    /* 主内容 */
+    .main-content {
+      text-align: center;
+      margin-top: 30px;
+    }
+
+    .main-content h1 {
+      font-size: 2rem;
+      color: #333;
+    }
+
+    .profile-avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      margin: 20px 0;
+    }
+
+    /* 按钮样
+::contentReference[oaicite:0]{index=0}
+ 
+
+
+
+
+
+
+
+
+源
+
