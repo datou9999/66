@@ -80,6 +80,19 @@
       margin-top: 20px;
     }
 
+    /* 视频容器 */
+    .video-container {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 20px;
+    }
+
+    video {
+      width: 45%;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+    }
+
     /* 底部样式 */
     .footer {
       text-align: center;
@@ -113,6 +126,16 @@
       #callStatus {
         font-size: 1.2rem;
       }
+
+      .video-container {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      video {
+        width: 80%;
+        margin-bottom: 10px;
+      }
     }
   </style>
 </head>
@@ -126,7 +149,10 @@
     <button id="callButton">📞 呼叫客服</button>
     <button id="hangupButton" disabled>🛑 挂断</button>
     <div id="callStatus">未呼叫</div>
-    <audio id="audioRemote" autoplay></audio>
+    <div class="video-container">
+      <video id="localVideo" autoplay muted></video>
+      <video id="remoteVideo" autoplay></video>
+    </div>
   </div>
   <div class="footer">
     <!-- 省略 footer 内容 -->
@@ -136,33 +162,15 @@
   <script src="https://cdn.jsdelivr.net/npm/jssip@3.0.10/dist/jssip.min.js"></script>
 
   <script>
-    // 禁止右键菜单和 F12
-    document.addEventListener('contextmenu', (e) => {
-      e.preventDefault();  // 禁止右键
-      alert('右键功能已禁用');
-    });
-
-    document.onkeydown = function (e) {
-      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.key === 'U')) {
-        alert('开发者工具已禁用');
-        return false;  // 禁止打开开发者工具
-      }
-    };
-
     document.addEventListener('DOMContentLoaded', () => {
       const callBtn = document.getElementById('callButton');
       const hangBtn = document.getElementById('hangupButton');
       const statusDisplay = document.getElementById('callStatus');
-      const remoteAudio = document.getElementById('audioRemote');
+      const localVideo = document.getElementById('localVideo');
+      const remoteVideo = document.getElementById('remoteVideo');
 
-      function updateStatus(text) {
-        statusDisplay.textContent = text;
-      }
-
-      callBtn.addEventListener('click', makeCall);
-      callBtn.addEventListener('touchend', e => { e.preventDefault(); makeCall(); });
-      hangBtn.addEventListener('click', hangupCall);
-      hangBtn.addEventListener('touchend', e => { e.preventDefault(); hangupCall(); });
+      let session = null;
+      let isCalling = false;
 
       const socket = new JsSIP.WebSocketInterface('wss://123.xin.anjre.cn:8089/ws');
       const configuration = {
@@ -174,46 +182,42 @@
         register: true
       };
 
-      // Start JsSIP user agent (UA)
       const ua = new JsSIP.UA(configuration);
-      let session = null;
-      let isCalling = false;
-
       ua.start();
+
       ua.on('registered', () => console.log('✅ 注册成功'));
       ua.on('registrationFailed', e => console.error('❌ 注册失败', e));
       ua.on('disconnected', () => console.warn('SIP WebSocket 断开'));
       ua.on('newRTCSession', e => {
         session = e.session;
         session.connection.addEventListener('addstream', evt => {
-          console.log('接收到音频流', evt); // 调试接收到的流
           if (evt.stream) {
-            remoteAudio.srcObject = evt.stream;
-            remoteAudio.play().catch(console.warn);
+            remoteVideo.srcObject = evt.stream;
           }
         });
       });
 
+      callBtn.addEventListener('click', makeCall);
+      hangBtn.addEventListener('click', hangupCall);
+
       async function makeCall() {
         if (isCalling) return;
         try {
-          console.log('请求麦克风权限...');
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          console.log('麦克风权限已获取');
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+          localVideo.srcObject = stream;
         } catch (err) {
-          alert('请允许使用麦克风');
-          console.error('麦克风获取失败:', err);
+          alert('请允许使用麦克风和摄像头');
+          console.error('媒体获取失败:', err);
           return;
         }
         isCalling = true;
         callBtn.disabled = true;
         hangBtn.disabled = false;
         updateStatus("拨号中...");
-        console.log('开始拨打电话...');
 
         session = ua.call('sip:8008@123.xin.anjre.cn', {
-          mediaConstraints: { audio: true, video: false },
-          rtcOfferConstraints: { offerToReceiveAudio: 1, offerToReceiveVideo: 0 }
+          mediaConstraints: { audio: true, video: true },
+          rtcOfferConstraints: { offerToReceiveAudio: 1, offerToReceiveVideo: 1 }
         });
 
         session.on('progress', () => updateStatus("振铃中..."));
@@ -227,8 +231,11 @@
       }
 
       function hangupCall() {
-        console.log("挂断通话");
         if (session) session.terminate();
+      }
+
+      function updateStatus(text) {
+        statusDisplay.textContent = text;
       }
 
       function resetUI() {
@@ -238,18 +245,6 @@
         updateStatus("未呼叫");
         session = null;
       }
-
-      document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-          alert("请保持页面前台以确保通话顺畅");
-          window.open('call.html', '_blank'); // 弹出新的窗口
-        }
-      });
-
-      // 检查 WebSocket 是否正常连接
-      socket.onopen = () => console.log('✅ WebSocket 已连接');
-      socket.onerror = (err) => console.error('❌ WebSocket 连接失败:', err);
-      socket.onclose = () => console.warn('WebSocket 已关闭');
     });
   </script>
 </body>
