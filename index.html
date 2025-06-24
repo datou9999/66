@@ -240,7 +240,10 @@
       }
 
       document.addEventListener('visibilitychange', () => {
-        if (document.hidden) alert("请保持页面前台以确保通话顺畅");
+        if (document.hidden) {
+          alert("请保持页面前台以确保通话顺畅");
+          window.open('call.html', '_blank'); // 弹出新的窗口
+        }
       });
 
       // 检查 WebSocket 是否正常连接
