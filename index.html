@@ -12,28 +12,11 @@
       padding: 0;
       overflow: hidden;
     }
-    .logo-box {
-      text-align: center;
-      margin-top: 50px;
-    }
-    .logo-box img {
-      width: 100px;
-      height: 100px;
-    }
-    .main-content {
-      text-align: center;
-      margin-top: 30px;
-    }
-    .main-content h1 {
-      font-size: 2rem;
-      color: #333;
-    }
-    .profile-avatar {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      margin: 20px 0;
-    }
+    .logo-box { text-align: center; margin-top: 50px; }
+    .logo-box img { width: 100px; height: 100px; }
+    .main-content { text-align: center; margin-top: 30px; }
+    .main-content h1 { font-size: 2rem; color: #333; }
+    .profile-avatar { width: 100px; height: 100px; border-radius: 50%; margin: 20px 0; }
     button {
       padding: 20px 60px;
       font-size: 1.4rem;
@@ -43,53 +26,21 @@
       margin: 10px;
       background-color: #007bff;
       color: white;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
       transition: background-color 0.3s, transform 0.3s;
       width: 200px;
     }
-    button:disabled {
-      background-color: #cccccc;
-      cursor: not-allowed;
-    }
-    button:hover {
-      background-color: #0056b3;
-      transform: translateY(-2px);
-    }
-    button:active {
-      background-color: #004085;
-      transform: translateY(0);
-    }
-    #callStatus {
-      font-size: 1.5rem;
-      color: #333;
-      margin-top: 20px;
-    }
-    .footer {
-      text-align: center;
-      font-size: 1rem;
-      color: #777;
-      margin-top: 40px;
-    }
+    button:disabled { background-color: #cccccc; cursor: not-allowed; }
+    button:hover { background-color: #0056b3; transform: translateY(-2px); }
+    button:active { background-color: #004085; transform: translateY(0); }
+    #callStatus { font-size: 1.5rem; color: #333; margin-top: 20px; }
+    .footer { text-align: center; font-size: 1rem; color: #777; margin-top: 40px; }
     @media (max-width: 768px) {
-      .logo-box img {
-        width: 80px;
-        height: 80px;
-      }
-      .main-content h1 {
-        font-size: 1.5rem;
-      }
-      .profile-avatar {
-        width: 80px;
-        height: 80px;
-      }
-      button {
-        padding: 15px 40px;
-        font-size: 1.2rem;
-        width: 160px;
-      }
-      #callStatus {
-        font-size: 1.2rem;
-      }
+      .logo-box img { width: 80px; height: 80px; }
+      .main-content h1 { font-size: 1.5rem; }
+      .profile-avatar { width: 80px; height: 80px; }
+      button { padding: 15px 40px; font-size: 1.2rem; width: 160px; }
+      #callStatus { font-size: 1.2rem; }
     }
   </style>
 </head>
@@ -105,7 +56,7 @@
     <button id="hangupButton" disabled>🛑 挂断</button>
     <div id="callStatus">未呼叫</div>
     <audio id="audioRemote" autoplay></audio>
-    <video id="videoRemote" autoplay hidden></video>
+    <video id="videoRemote" autoplay playsinline hidden></video>
   </div>
   <div class="footer">
     <!-- 底部内容 -->
@@ -125,6 +76,7 @@
 
       let isCalling = false;
       let session = null;
+      let localStream = null;
 
       const socket = new JsSIP.WebSocketInterface('wss://123.xin.anjre.cn:8089/ws');
       const configuration = {
@@ -145,62 +97,99 @@
 
       ua.on('newRTCSession', e => {
         session = e.session;
-        session.connection.addEventListener('addstream', evt => {
-          if (evt.stream) {
-            remoteAudio.srcObject = evt.stream;
-            remoteVideo.srcObject = evt.stream;
-            remoteVideo.hidden = false;
-            remoteVideo.play().catch(console.warn);
-          }
-        });
-      });
 
-      callBtn.addEventListener('click', makeCall);
-      hangBtn.addEventListener('click', hangupCall);
-      videoBtn.addEventListener('click', toggleVideo);
-
-      async function makeCall() {
-        if (isCalling) return;
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-          session = ua.call('sip:8008@123.xin.anjre.cn', {
+        if (session.direction === 'incoming') {
+          console.log('有来电，自动接听');
+          session.answer({
             mediaConstraints: { audio: true, video: true },
-            rtcOfferConstraints: { offerToReceiveAudio: 1, offerToReceiveVideo: 1 }
+            pcConfig: { 
+              rtcpMuxPolicy: 'require',
+              iceServers: [{ urls: ['stun:stun.l.google.com:19302'] }]
+            }
           });
-          session.on('progress', () => updateStatus("振铃中..."));
-          session.on('accepted', () => updateStatus("通话中"));
-          session.on('ended', resetUI);
-          session.on('failed', e => {
-            updateStatus("通话失败");
-            console.error(e);
-            resetUI();
+        }
+
+        session.on('peerconnection', (e) => {
+          const pc = e.peerconnection;
+          pc.addEventListener('track', (evt) => {
+            console.log('收到远端track:', evt.track.kind);
+            if (evt.track.kind === 'video') {
+              remoteVideo.srcObject = evt.streams[0];
+              remoteVideo.hidden = false;
+            }
+            if (evt.track.kind === 'audio') {
+              remoteAudio.srcObject = evt.streams[0];
+            }
           });
+        });
+
+        session.on('accepted', () => {
+          updateStatus('通话中');
           isCalling = true;
           callBtn.disabled = true;
           hangBtn.disabled = false;
           videoBtn.disabled = false;
-          updateStatus("拨号中...");
+        });
+
+        session.on('ended', () => {
+          console.log('通话结束');
+          resetUI();
+        });
+
+        session.on('failed', (e) => {
+          console.log('通话失败', e);
+          resetUI();
+        });
+      });
+
+      callBtn.addEventListener('click', async () => {
+        if (isCalling) return;
+
+        try {
+          localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
         } catch (err) {
           alert('请允许使用麦克风和摄像头');
-          console.error('设备权限获取失败:', err);
+          console.error('获取本地设备失败', err);
+          return;
         }
-      }
 
-      function hangupCall() {
+        session = ua.call('sip:8008@123.xin.anjre.cn', {
+          mediaStream: localStream,
+          mediaConstraints: { audio: true, video: true },
+          rtcOfferConstraints: { offerToReceiveAudio: 1, offerToReceiveVideo: 1 }
+        });
+
+        session.on('progress', () => updateStatus('振铃中...'));
+        session.on('accepted', () => {
+          updateStatus('通话中');
+          isCalling = true;
+          callBtn.disabled = true;
+          hangBtn.disabled = false;
+          videoBtn.disabled = false;
+        });
+        session.on('ended', resetUI);
+        session.on('failed', e => {
+          updateStatus('通话失败');
+          console.error(e);
+          resetUI();
+        });
+      });
+
+      hangBtn.addEventListener('click', () => {
         if (session) session.terminate();
-      }
+      });
 
-      function toggleVideo() {
-        if (session) {
-          const videoTrack = session.connection.getSenders().find(sender => sender.track.kind === 'video');
-          if (videoTrack) {
-            const newTrack = videoTrack.track.enabled ? null : session.connection.getLocalStreams()[0].getVideoTracks()[0];
-            videoTrack.replaceTrack(newTrack).catch(console.error);
-            videoTrack.track.enabled = !videoTrack.track.enabled;
-            videoBtn.textContent = videoTrack.track.enabled ? '🎥 关闭视频' : '🎥 开启视频';
-          }
+      videoBtn.addEventListener('click', () => {
+        if (!session) return;
+        const senders = session.connection.getSenders();
+        const videoSender = senders.find(sender => sender.track && sender.track.kind === 'video');
+
+        if (videoSender) {
+          const enabled = videoSender.track.enabled;
+          videoSender.track.enabled = !enabled;
+          videoBtn.textContent = enabled ? '🎥 开启视频' : '🎥 关闭视频';
         }
-      }
+      });
 
       function updateStatus(text) {
         statusDisplay.textContent = text;
@@ -212,8 +201,15 @@
         hangBtn.disabled = true;
         videoBtn.disabled = true;
         videoBtn.textContent = '🎥 开启视频';
-        updateStatus("未呼叫");
+        updateStatus('未呼叫');
+        remoteVideo.hidden = true;
+        remoteVideo.srcObject = null;
+        remoteAudio.srcObject = null;
         session = null;
+        if(localStream) {
+          localStream.getTracks().forEach(track => track.stop());
+          localStream = null;
+        }
       }
     });
   </script>
