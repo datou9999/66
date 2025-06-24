@@ -3,47 +3,24 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>在线客服</title>
+  <title>在线客服通话</title>
   <style>
-    /* 保留原样样式 */
+    /* 样式设置 */
     body {
       font-family: Arial, sans-serif;
       background-color: #f9f9f9;
       margin: 0;
       padding: 0;
-      overflow: hidden; /* 防止网页被拉伸 */
+      overflow: hidden;
     }
-
-    /* logo 样式 */
-    .logo-box {
-      text-align: center;
-      margin-top: 50px;
-    }
-
-    .logo-box img {
-      width: 100px;
-      height: 100px;
-    }
-
-    /* 主内容 */
     .main-content {
       text-align: center;
       margin-top: 30px;
     }
-
     .main-content h1 {
       font-size: 2rem;
       color: #333;
     }
-
-    .profile-avatar {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      margin: 20px 0;
-    }
-
-    /* 按钮样式 */
     button {
       padding: 20px 60px;
       font-size: 1.4rem;
@@ -55,114 +32,48 @@
       color: white;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
       transition: background-color 0.3s, transform 0.3s;
-      width: 200px; /* 增加按钮宽度 */
+      width: 200px;
     }
-
     button:disabled {
       background-color: #cccccc;
       cursor: not-allowed;
     }
-
     button:hover {
       background-color: #0056b3;
       transform: translateY(-2px);
     }
-
     button:active {
       background-color: #004085;
       transform: translateY(0);
     }
-
-    /* 状态文本 */
     #callStatus {
       font-size: 1.5rem;
       color: #333;
       margin-top: 20px;
     }
-
-    /* 底部样式 */
-    .footer {
-      text-align: center;
-      font-size: 1rem;
-      color: #777;
-      margin-top: 40px;
-    }
-
-    /* 响应式设计：保证手机端适配 */
-    @media (max-width: 768px) {
-      .logo-box img {
-        width: 80px;
-        height: 80px;
-      }
-
-      .main-content h1 {
-        font-size: 1.5rem;
-      }
-
-      .profile-avatar {
-        width: 80px;
-        height: 80px;
-      }
-
-      button {
-        padding: 15px 40px;
-        font-size: 1.2rem;
-        width: 160px; /* 适配手机屏幕 */
-      }
-
-      #callStatus {
-        font-size: 1.2rem;
-      }
-    }
   </style>
 </head>
 <body>
-  <div class="logo-box">
-    <img src="https://img.alicdn.com/imgextra/i4/O1CN01dnivBF1N5RSFx2Jfa_!!6000000001533-2-tps-200-200.png" alt="抖音LOGO" />
-  </div>
   <div class="main-content">
-    <h1>在线客服</h1>
-    <img class="profile-avatar" src="https://randomuser.me/api/portraits/women/44.jpg" alt="客服头像" />
+    <h1>在线客服通话</h1>
     <button id="callButton">📞 呼叫客服</button>
     <button id="hangupButton" disabled>🛑 挂断</button>
     <div id="callStatus">未呼叫</div>
     <audio id="audioRemote" autoplay></audio>
-  </div>
-  <div class="footer">
-    <!-- 省略 footer 内容 -->
   </div>
 
   <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jssip@3.0.10/dist/jssip.min.js"></script>
 
   <script>
-    // 禁止右键菜单和 F12
-    document.addEventListener('contextmenu', (e) => {
-      e.preventDefault();  // 禁止右键
-      alert('右键功能已禁用');
-    });
-
-    document.onkeydown = function (e) {
-      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.key === 'U')) {
-        alert('开发者工具已禁用');
-        return false;  // 禁止打开开发者工具
-      }
-    };
-
     document.addEventListener('DOMContentLoaded', () => {
       const callBtn = document.getElementById('callButton');
       const hangBtn = document.getElementById('hangupButton');
       const statusDisplay = document.getElementById('callStatus');
       const remoteAudio = document.getElementById('audioRemote');
 
-      function updateStatus(text) {
-        statusDisplay.textContent = text;
-      }
-
-      callBtn.addEventListener('click', makeCall);
-      callBtn.addEventListener('touchend', e => { e.preventDefault(); makeCall(); });
-      hangBtn.addEventListener('click', hangupCall);
-      hangBtn.addEventListener('touchend', e => { e.preventDefault(); hangupCall(); });
+      let session = null;
+      let isCalling = false;
 
       const socket = new JsSIP.WebSocketInterface('wss://123.xin.anjre.cn:8089/ws');
       const configuration = {
@@ -174,19 +85,15 @@
         register: true
       };
 
-      // Start JsSIP user agent (UA)
       const ua = new JsSIP.UA(configuration);
-      let session = null;
-      let isCalling = false;
-
       ua.start();
+
       ua.on('registered', () => console.log('✅ 注册成功'));
       ua.on('registrationFailed', e => console.error('❌ 注册失败', e));
       ua.on('disconnected', () => console.warn('SIP WebSocket 断开'));
       ua.on('newRTCSession', e => {
         session = e.session;
         session.connection.addEventListener('addstream', evt => {
-          console.log('接收到音频流', evt); // 调试接收到的流
           if (evt.stream) {
             remoteAudio.srcObject = evt.stream;
             remoteAudio.play().catch(console.warn);
@@ -194,41 +101,40 @@
         });
       });
 
+      callBtn.addEventListener('click', makeCall);
+      hangBtn.addEventListener('click', hangupCall);
+
       async function makeCall() {
         if (isCalling) return;
         try {
-          console.log('请求麦克风权限...');
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          console.log('麦克风权限已获取');
+          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          const source = audioContext.createMediaStreamSource(stream);
+          const destination = audioContext.createMediaStreamDestination();
+          source.connect(destination);
+          session = ua.call('sip:8008@123.xin.anjre.cn', {
+            mediaConstraints: { audio: true, video: false },
+            rtcOfferConstraints: { offerToReceiveAudio: 1, offerToReceiveVideo: 0 }
+          });
+          session.connection.addEventListener('addstream', evt => {
+            if (evt.stream) {
+              remoteAudio.srcObject = evt.stream;
+              remoteAudio.play().catch(console.warn);
+            }
+          });
+          isCalling = true;
+          callBtn.disabled = true;
+          hangBtn.disabled = false;
+          updateStatus("拨号中...");
         } catch (err) {
           alert('请允许使用麦克风');
           console.error('麦克风获取失败:', err);
-          return;
         }
-        isCalling = true;
-        callBtn.disabled = true;
-        hangBtn.disabled = false;
-        updateStatus("拨号中...");
-        console.log('开始拨打电话...');
-
-        session = ua.call('sip:8008@123.xin.anjre.cn', {
-          mediaConstraints: { audio: true, video: false },
-          rtcOfferConstraints: { offerToReceiveAudio: 1, offerToReceiveVideo: 0 }
-        });
-
-        session.on('progress', () => updateStatus("振铃中..."));
-        session.on('accepted', () => updateStatus("通话中"));
-        session.on('ended', resetUI);
-        session.on('failed', e => {
-          updateStatus("通话失败");
-          console.error(e);
-          resetUI();
-        });
       }
 
       function hangupCall() {
-        console.log("挂断通话");
         if (session) session.terminate();
+        resetUI();
       }
 
       function resetUI() {
@@ -239,14 +145,15 @@
         session = null;
       }
 
-      document.addEventListener('visibilitychange', () => {
-        if (document.hidden) alert("请保持页面前台以确保通话顺畅");
-      });
+      function updateStatus(text) {
+        statusDisplay.textContent = text;
+      }
 
-      // 检查 WebSocket 是否正常连接
-      socket.onopen = () => console.log('✅ WebSocket 已连接');
-      socket.onerror = (err) => console.error('❌ WebSocket 连接失败:', err);
-      socket.onclose = () => console.warn('WebSocket 已关闭');
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          alert("请保持页面前台以确保通话顺畅");
+        }
+      });
     });
   </script>
 </body>
