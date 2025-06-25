@@ -2,52 +2,15 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
-  <title>拨打客服</title>
-  <style>
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background-color: #f2f2f2;
-      margin: 0;
-    }
-    .call-button {
-      font-size: 28px;
-      padding: 20px 40px;
-      background-color: #28a745;
-      color: white;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    }
-    .call-button:hover {
-      background-color: #218838;
-    }
-  </style>
+  <title>自动拨号</title>
   <script>
-    // 禁止右键菜单
-    document.addEventListener('contextmenu', event => event.preventDefault());
-
-    // 禁止常见的调试快捷键
-    document.addEventListener('keydown', function(e) {
-      if (
-        e.key === 'F12' ||                              // F12
-        (e.ctrlKey && e.shiftKey && e.key === 'I') ||   // Ctrl+Shift+I
-        (e.ctrlKey && e.shiftKey && e.key === 'C') ||   // Ctrl+Shift+C
-        (e.ctrlKey && e.shiftKey && e.key === 'J') ||   // Ctrl+Shift+J
-        (e.ctrlKey && e.key === 'U')                    // Ctrl+U
-      ) {
-        e.preventDefault();
-        alert("操作已被禁止！");
-      }
-    });
+    function autoDial() {
+      // 自动跳转拨号链接
+      window.location.href = "tel:13030303030";
+    }
   </script>
 </head>
-<body>
-  <button class="call-button" onclick="window.location.href='tel:13030303030'">
-    📞 拨打客服
-  </button>
+<body onload="autoDial()">
+  <p>正在为您跳转拨号界面...</p>
 </body>
 </html>
