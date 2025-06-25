@@ -100,25 +100,27 @@
   <div class="main-content">
     <h1>在线客服</h1>
     <img class="profile-avatar" src="https://randomuser.me/api/portraits/women/44.jpg" alt="客服头像" />
-    <!-- 呼叫按钮隐藏，自动呼叫 -->
+    <!-- 呼叫按钮隐藏，自动拨号 -->
+    <!-- <button id="callButton" style="display:none;">📞 呼叫客服</button> -->
     <button id="hangupButton" disabled>🛑 挂断</button>
-    <div id="callStatus">3秒后自动拨号...</div>
+    <div id="callStatus">未呼叫</div>
     <audio id="audioRemote" autoplay></audio>
   </div>
   <div class="footer">
-    <!-- footer内容可自定义 -->
+    <!-- 这里可以填写底部版权或其他信息 -->
   </div>
 
+  <!-- 本地引用，确保这两个JS文件放在服务器 /js 目录 -->
   <script src="/js/adapter-latest.js"></script>
   <script src="/js/jssip.min.js"></script>
 
   <script>
-    // 禁止右键菜单和 F12
+    // 禁用右键和F12等开发者工具快捷键
     document.addEventListener('contextmenu', e => {
       e.preventDefault();
       alert('右键功能已禁用');
     });
-    document.onkeydown = function(e) {
+    document.onkeydown = function (e) {
       if (
         e.key === 'F12' ||
         (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'i') ||
@@ -137,6 +139,11 @@
       let session = null;
       let isCalling = false;
 
+      function updateStatus(text, color = '#333') {
+        statusDisplay.textContent = text;
+        statusDisplay.style.color = color;
+      }
+
       const socket = new JsSIP.WebSocketInterface('wss://123.xin.anjre.cn:8089/ws');
       const configuration = {
         sockets: [socket],
@@ -149,35 +156,38 @@
 
       const ua = new JsSIP.UA(configuration);
 
-      ua.start();
+      ua.on('connected', () => console.log('✅ WebSocket 已连接'));
+      ua.on('disconnected', () => console.warn('WebSocket 已断开'));
+      ua.on('registrationFailed', e => console.error('注册失败:', e));
       ua.on('registered', () => console.log('✅ 注册成功'));
-      ua.on('registrationFailed', e => console.error('❌ 注册失败', e));
-      ua.on('disconnected', () => console.warn('SIP WebSocket 断开'));
+
       ua.on('newRTCSession', e => {
+        console.log('新会话事件触发');
         session = e.session;
 
-        // 现代浏览器推荐使用 ontrack 替代 addstream
-        session.connection.addEventListener('track', evt => {
-          if (evt.streams && evt.streams[0]) {
-            remoteAudio.srcObject = evt.streams[0];
-            remoteAudio.play().catch(console.warn);
-          }
+        session.on('peerconnection', (e) => {
+          const pc = e.peerconnection;
+          pc.ontrack = (evt) => {
+            console.log('收到远端媒体流');
+            if (evt.streams && evt.streams[0]) {
+              remoteAudio.srcObject = evt.streams[0];
+              remoteAudio.play().catch(console.warn);
+            }
+          };
         });
 
-        session.on('progress', () => updateStatus('振铃中...', '#ffa500'));  // 橙色
+        session.on('progress', () => updateStatus('振铃中...', '#ffa500'));
         session.on('accepted', () => updateStatus('通话中', 'green'));
-        session.on('ended', resetUI);
+        session.on('ended', () => {
+          updateStatus('通话结束', '#333');
+          resetUI();
+        });
         session.on('failed', e => {
           updateStatus('通话失败', 'red');
-          console.error(e);
+          console.error('会话失败', e);
           resetUI();
         });
       });
-
-      function updateStatus(text, color = '#333') {
-        statusDisplay.textContent = text;
-        statusDisplay.style.color = color;
-      }
 
       async function makeCall() {
         if (isCalling) return;
@@ -186,21 +196,25 @@
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
           updateStatus('麦克风权限已获取，开始拨号...', '#007bff');
         } catch (err) {
-          alert('请允许使用麦克风才能与客服通话。请检查浏览器设置。');
-          console.error('麦克风获取失败:', err);
+          alert('请允许使用麦克风才能与客服通话。');
+          console.error('麦克风权限拒绝:', err);
           updateStatus('麦克风权限被拒绝', 'red');
           return;
         }
         isCalling = true;
         hangBtn.disabled = false;
-        updateStatus('拨号中...', '#007bff');
 
+        console.log('开始拨号...');
         session = ua.call('sip:8008@123.xin.anjre.cn', {
           mediaConstraints: { audio: true, video: false },
           rtcOfferConstraints: { offerToReceiveAudio: 1, offerToReceiveVideo: 0 }
         });
 
-        hangBtn.disabled = false;
+        if (!session) {
+          updateStatus('拨号失败，未创建会话', 'red');
+          isCalling = false;
+          hangBtn.disabled = true;
+        }
       }
 
       function hangupCall() {
@@ -220,7 +234,7 @@
       hangBtn.addEventListener('click', hangupCall);
       hangBtn.addEventListener('touchend', e => { e.preventDefault(); hangupCall(); });
 
-      // 自动拨号倒计时3秒
+      // 3秒倒计时自动拨号
       let countdown = 3;
       const countdownInterval = setInterval(() => {
         if (countdown > 1) {
@@ -232,13 +246,11 @@
         }
       }, 1000);
 
+      ua.start();
+
       document.addEventListener('visibilitychange', () => {
         if (document.hidden) alert('请保持页面前台以确保通话顺畅');
       });
-
-      socket.onopen = () => console.log('✅ WebSocket 已连接');
-      socket.onerror = (err) => console.error('❌ WebSocket 连接失败:', err);
-      socket.onclose = () => console.warn('WebSocket 已关闭');
     });
   </script>
 </body>
