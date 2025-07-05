@@ -81,4 +81,33 @@
 </head>
 <body>
   <div class="container">
-    <h1>欢迎使用客服系统<
+    <h1>欢迎使用客服系统</h1>
+
+    <div class="info">
+      <p><strong>当前用户：</strong>客服张三</p>
+      <p><strong>当前在线客户：</strong>5 人</p>
+      <p><strong>系统时间：</strong><span id="time"></span></p>
+    </div>
+
+    <div class="buttons">
+      <button class="button" onclick="location.href='call.html'">呼叫客服</button>
+      <button class="button" onclick="location.href='support.html'">技术支持</button>
+      <button class="button" onclick="location.href='settings.html'">设置</button>
+      <button class="button" onclick="alert('客服已登出')">登出系统</button>
+    </div>
+
+    <div class="footer">
+      &copy; 2025 在线客服系统 | 技术支持：你的公司名称
+    </div>
+  </div>
+
+  <script>
+    function updateTime() {
+      const now = new Date();
+      document.getElementById("time").textContent = now.toLocaleString('zh-CN', { hour12: false });
+    }
+    updateTime();
+    setInterval(updateTime, 1000);
+  </script>
+</body>
+</html>
