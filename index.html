@@ -2,53 +2,69 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <title>客服工作台 - 欢迎页</title>
+  <title>客服系统首页</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body {
-      font-family: "微软雅黑", sans-serif;
+    * {
       margin: 0;
       padding: 0;
-      background-color: #f0f2f5;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "微软雅黑", sans-serif;
+      background-color: #eef1f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
     }
 
     .container {
-      max-width: 800px;
-      margin: 50px auto;
-      background: white;
-      padding: 30px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-      border-radius: 12px;
+      background-color: #ffffff;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 600px;
     }
 
     h1 {
       text-align: center;
+      font-size: 28px;
       color: #333;
+      margin-bottom: 30px;
     }
 
     .info {
-      margin-top: 20px;
       font-size: 16px;
       line-height: 1.8;
+      color: #444;
+      margin-bottom: 30px;
     }
 
-    .quick-actions {
-      margin-top: 30px;
+    .info p {
+      margin-bottom: 8px;
+    }
+
+    .buttons {
       display: flex;
-      justify-content: space-around;
       flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
     }
 
     .button {
       background-color: #1890ff;
-      color: white;
-      border: none;
+      color: #fff;
       padding: 12px 24px;
-      margin: 10px;
-      border-radius: 6px;
-      cursor: pointer;
+      border: none;
+      border-radius: 8px;
       font-size: 16px;
+      cursor: pointer;
       transition: background-color 0.3s ease;
+      min-width: 120px;
+      text-align: center;
     }
 
     .button:hover {
@@ -58,41 +74,11 @@
     .footer {
       text-align: center;
       margin-top: 40px;
-      color: #999;
       font-size: 14px;
+      color: #999;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>欢迎进入客服系统</h1>
-    <div class="info">
-      <p><strong>当前用户：</strong>客服张三</p>
-      <p><strong>当前在线客户：</strong>5人</p>
-      <p><strong>系统时间：</strong><span id="time"></span></p>
-    </div>
-
-    <div class="quick-actions">
-      <button class="button" onclick="location.href='dashboard.html'">进入客服工作台</button>
-      <button class="button" onclick="location.href='history.html'">查看聊天记录</button>
-      <button class="button" onclick="location.href='settings.html'">设置</button>
-      <button class="button" onclick="alert('客服已登出')">登出系统</button>
-    </div>
-
-    <div class="footer">
-      &copy; 2025 在线客服系统 | 技术支持：你的公司名称
-    </div>
-  </div>
-
-  <script>
-    // 设置当前时间
-    function updateTime() {
-      const now = new Date();
-      const formatted = now.toLocaleString('zh-CN', { hour12: false });
-      document.getElementById("time").textContent = formatted;
-    }
-    updateTime();
-    setInterval(updateTime, 1000);
-  </script>
-</body>
-</html>
+    <h1>欢迎使用客服系统<
