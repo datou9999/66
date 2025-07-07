@@ -2,173 +2,110 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <title>客服系统首页</title>
+  <title>來電通知</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
-      font-family: "微软雅黑", sans-serif;
       margin: 0;
       padding: 0;
-      background-color: #f0f2f5;
-    }
-
-    .container {
-      max-width: 400px;
-      margin: 50px auto;
-      background: white;
-      padding: 30px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-      border-radius: 12px;
-      text-align: center;
-    }
-
-    h1 {
-      color: #333;
-    }
-
-    .info {
-      margin-top: 20px;
-      font-size: 16px;
-      line-height: 1.8;
-    }
-
-    .input-box {
-      margin: 20px 0;
+      background: #f0f2f5;
+      font-family: "微软雅黑", sans-serif;
       display: flex;
-      justify-content: center;
       align-items: center;
-      gap: 10px;
+      justify-content: center;
+      height: 100vh;
     }
 
-    input[type="text"] {
-      width: 70%;
-      padding: 12px;
-      font-size: 18px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
+    .call-box {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+      width: 90%;
+      max-width: 360px;
       text-align: center;
     }
 
-    .delete-btn {
+    .caller {
       font-size: 22px;
-      padding: 10px 16px;
-      border: none;
-      border-radius: 6px;
-      background-color: #ccc;
-      color: #333;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-
-    .delete-btn:hover {
-      background-color: #aaa;
-    }
-
-    .dialpad {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      justify-items: center;
-      margin: 20px auto;
-      width: 260px;
-    }
-
-    .dialpad button {
-      font-size: 32px;
-      padding: 24px 0;
-      width: 80px;
-      border-radius: 10px;
-      border: none;
-      background-color: #1890ff;
-      color: white;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-
-    .dialpad button:hover {
-      background-color: #40a9ff;
-    }
-
-    .button-call {
-      background-color: #ff4d4f;
-      color: white;
-      border: none;
-      padding: 16px 32px;
-      margin-top: 20px;
-      border-radius: 6px;
-      font-size: 20px;
       font-weight: bold;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    .subtext {
+      font-size: 16px;
+      color: #777;
+      margin-bottom: 30px;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 30px;
+    }
+
+    .circle-btn {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: none;
+      color: white;
+      font-size: 24px;
       cursor: pointer;
-      width: 80%;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s;
     }
 
-    .button-call:hover {
-      background-color: #ff7875;
+    .circle-btn:hover {
+      transform: scale(1.1);
     }
 
-    .footer {
-      text-align: center;
-      margin-top: 40px;
-      color: #999;
-      font-size: 14px;
+    .accept {
+      background-color: #4CAF50;
+    }
+
+    .reject {
+      background-color: #FF4D4F;
     }
   </style>
-  <script>
-    function appendNumber(num) {
-      const input = document.getElementById("numberInput");
-      input.value += num;
-    }
-
-    function deleteLast() {
-      const input = document.getElementById("numberInput");
-      input.value = input.value.slice(0, -1);
-    }
-
-    function makeCall() {
-      const number = document.getElementById("numberInput").value;
-      if (number) {
-        alert("正在呼叫客服编号：" + number);
-        // 可加跳转或 SIP 呼叫逻辑
-        // location.href = "call.html?number=" + encodeURIComponent(number);
-      } else {
-        alert("请输入客服编号");
-      }
-    }
-  </script>
 </head>
 <body>
-  <div class="container">
-    <h1>欢迎进入客服系统</h1>
-    <div class="info">
-      <p><strong>当前用户：</strong>945266</p>
-      <p><strong>当前在线客户：</strong>5人</p>
-    </div>
 
-    <div class="input-box">
-      <input type="text" id="numberInput" placeholder="请输入客服编号" readonly />
-      <button class="delete-btn" onclick="deleteLast()">⌫</button>
-    </div>
-
-    <div class="dialpad">
-      <button onclick="appendNumber('1')">1</button>
-      <button onclick="appendNumber('2')">2</button>
-      <button onclick="appendNumber('3')">3</button>
-      <button onclick="appendNumber('4')">4</button>
-      <button onclick="appendNumber('5')">5</button>
-      <button onclick="appendNumber('6')">6</button>
-      <button onclick="appendNumber('7')">7</button>
-      <button onclick="appendNumber('8')">8</button>
-      <button onclick="appendNumber('9')">9</button>
-      <button onclick="appendNumber('*')">*</button>
-      <button onclick="appendNumber('0')">0</button>
-      <button onclick="appendNumber('#')">#</button>
-    </div>
-
-    <button class="button-call" onclick="makeCall()">呼叫</button>
-
-    <div class="footer">
-      &copy; 2025 在线客服系统 | 技术支持：在綫客服
+  <div class="call-box" id="incomingCall">
+    <div class="caller">📞 來電：<span id="callerID">8001</span></div>
+    <div class="subtext">是否接聽？</div>
+    <div class="buttons">
+      <button class="circle-btn accept" onclick="acceptCall()">✔</button>
+      <button class="circle-btn reject" onclick="rejectCall()">✖</button>
     </div>
   </div>
+
+  <script>
+    // 模擬 SIP.js 來電事件（可刪除）
+    setTimeout(() => {
+      document.getElementById("callerID").innerText = "8001";
+      document.getElementById("incomingCall").style.display = "flex";
+    }, 1000);
+
+    function acceptCall() {
+      alert("✅ 已接聽！");
+      document.getElementById("incomingCall").style.display = "none";
+      // 實際用 SIP.js 接聽 session.accept()
+    }
+
+    function rejectCall() {
+      alert("❌ 已掛斷！");
+      document.getElementById("incomingCall").style.display = "none";
+      // 實際用 SIP.js 拒接 session.reject()
+    }
+  </script>
+
 </body>
 </html>
