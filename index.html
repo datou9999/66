@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>客服系统首页</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
       font-family: "微软雅黑", sans-serif;
@@ -48,16 +48,17 @@
     .dialpad {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
+      gap: 16px;
       justify-items: center;
       margin: 20px auto;
-      width: 80%;
+      width: 260px;
     }
 
     .dialpad button {
-      font-size: 20px;
-      padding: 16px;
-      border-radius: 6px;
+      font-size: 32px;
+      padding: 24px 0;
+      width: 80px;
+      border-radius: 10px;
       border: none;
       background-color: #1890ff;
       color: white;
@@ -102,8 +103,8 @@
     function makeCall() {
       const number = document.getElementById("numberInput").value;
       if (number) {
-        // 这里可跳转页面或触发JS拨号逻辑
         alert("正在呼叫客服编号：" + number);
+        // 这里可以添加真正的呼叫逻辑，比如跳转或调用接口
         // location.href = "call.html?number=" + encodeURIComponent(number);
       } else {
         alert("请输入客服编号");
@@ -146,4 +147,3 @@
   </div>
 </body>
 </html>
-
