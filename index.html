@@ -1,153 +1,126 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8" />
-  <title>客服系统首页</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    /* 这里放你之前给的css代码 */
-  </style>
-  <script src="/js/adapter-latest.js"></script>
-  <script src="/js/jssip.min.js"></script>
-  <script>
-    let ua = null;
-    let session = null;
+<!-- ... 你上面HTML和CSS不变 ... -->
 
-    function appendNumber(num) {
-      const input = document.getElementById("numberInput");
-      input.value += num;
+<script src="/js/adapter-latest.js"></script>
+<script src="/js/jssip.min.js"></script>
+
+<script>
+  // 你原来的拨号盘代码
+  function appendNumber(num) {
+    const input = document.getElementById("numberInput");
+    input.value += num;
+  }
+  function deleteNumber() {
+    const input = document.getElementById("numberInput");
+    input.value = input.value.slice(0, -1);
+  }
+
+  // SIP 相关变量
+  let ua = null;
+  let session = null;
+  let localStream = null;
+  let isCalling = false;
+
+  // SIP 注册和连接函数
+  function startUA() {
+    if (ua) return;
+
+    const socket = new JsSIP.WebSocketInterface('wss://123.xin.anjre.cn:8089/ws');
+    const configuration = {
+      sockets: [socket],
+      uri: 'sip:1001@123.xin.anjre.cn',
+      password: 'Aa6363463@',
+      display_name: '网页客户',
+      session_timers: false,
+      register: true
+    };
+
+    ua = new JsSIP.UA(configuration);
+
+    ua.on('registered', () => {
+      console.log('✅ 注册成功');
+    });
+
+    ua.on('registrationFailed', e => {
+      alert('注册失败，请刷新页面重试');
+      resetUI();
+    });
+
+    ua.on('newRTCSession', e => {
+      session = e.session;
+      session.on('progress', () => updateStatus("振铃中..."));
+      session.on('accepted', () => {
+        updateStatus("通话中");
+      });
+      session.on('ended', () => {
+        updateStatus("通话结束");
+        resetUI();
+      });
+      session.on('failed', () => {
+        updateStatus("通话失败");
+        resetUI();
+      });
+    });
+
+    ua.start();
+  }
+
+  // 状态更新
+  function updateStatus(text) {
+    // 你可以用页面上的某个元素显示状态，比如添加一个div显示状态
+    console.log(text);
+  }
+
+  // 发起呼叫
+  async function makeCall() {
+    if (isCalling) return;
+    const number = document.getElementById("numberInput").value;
+    if (!number) {
+      alert("请输入客服编号");
+      return;
     }
 
-    function deleteNumber() {
-      const input = document.getElementById("numberInput");
-      input.value = input.value.slice(0, -1);
+    try {
+      localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (e) {
+      alert('请允许使用麦克风，否则无法呼叫客服');
+      return;
     }
 
-    function makeCall() {
-      const number = document.getElementById("numberInput").value;
-      if (!number) {
-        alert("请输入客服编号");
-        return;
-      }
+    startUA();
+
+    // 延迟等UA启动
+    setTimeout(() => {
       if (!ua) {
-        alert("SIP尚未注册");
+        alert('SIP尚未准备好');
         return;
       }
-      if (session) {
-        alert("当前已有通话，请先挂断");
-        return;
-      }
+      isCalling = true;
       session = ua.call('sip:' + number + '@123.xin.anjre.cn', {
         mediaConstraints: { audio: true, video: false },
+        mediaStream: localStream,
       });
-      updateCallUI(true);
+      updateStatus('拨号中...');
+    }, 1000);
+  }
+
+  // 挂断
+  function hangupCall() {
+    if (session) session.terminate();
+    resetUI();
+  }
+
+  // 重置UI和状态
+  function resetUI() {
+    isCalling = false;
+    if (localStream) {
+      localStream.getTracks().forEach(t => t.stop());
+      localStream = null;
     }
+    session = null;
+    updateStatus('等待操作');
+  }
 
-    function updateCallUI(isCalling) {
-      document.querySelector('.button-call').disabled = isCalling;
-      // 你可以根据需要调整按钮状态
-    }
+  // 绑定呼叫按钮
+  document.querySelector('.button-call').onclick = makeCall;
 
-    function acceptCall() {
-      if (session) session.answer();
-      document.getElementById("incomingCall").style.display = "none";
-      updateCallUI(true);
-    }
-
-    function rejectCall() {
-      if (session) session.terminate();
-      document.getElementById("incomingCall").style.display = "none";
-      updateCallUI(false);
-    }
-
-    function setupUA() {
-      if (ua) return;
-      const socket = new JsSIP.WebSocketInterface('wss://123.xin.anjre.cn:8089/ws');
-      ua = new JsSIP.UA({
-        sockets: [socket],
-        uri: 'sip:1001@123.xin.anjre.cn',
-        password: 'Aa6363463@',
-        register: true,
-      });
-
-      ua.on('newRTCSession', e => {
-        if (session) {
-          // 如果已有会话，自动拒绝新呼叫
-          e.session.terminate();
-          return;
-        }
-        session = e.session;
-
-        // 来电时显示弹窗
-        if (session.direction === 'incoming') {
-          document.getElementById("callerId").innerText = session.remote_identity.uri.user || "未知号码";
-          document.getElementById("incomingCall").style.display = "block";
-        }
-
-        session.on('ended', () => {
-          session = null;
-          updateCallUI(false);
-        });
-        session.on('failed', () => {
-          session = null;
-          updateCallUI(false);
-        });
-        session.on('accepted', () => {
-          updateCallUI(true);
-        });
-      });
-
-      ua.start();
-    }
-
-    window.onload = function () {
-      setupUA();
-    };
-  </script>
-</head>
-<body>
-  <div class="container">
-    <h1>欢迎进入客服系统</h1>
-    <div class="info">
-      <p><strong>当前用户：</strong>945266</p>
-      <p><strong>当前在线客户：</strong>5人</p>
-    </div>
-
-    <div class="input-box">
-      <input type="text" id="numberInput" placeholder="请输入客服编号" readonly />
-      <button class="delete-btn" onclick="deleteNumber()">📞</button>
-    </div>
-
-    <div class="dialpad">
-      <button onclick="appendNumber('1')">1</button>
-      <button onclick="appendNumber('2')">2</button>
-      <button onclick="appendNumber('3')">3</button>
-      <button onclick="appendNumber('4')">4</button>
-      <button onclick="appendNumber('5')">5</button>
-      <button onclick="appendNumber('6')">6</button>
-      <button onclick="appendNumber('7')">7</button>
-      <button onclick="appendNumber('8')">8</button>
-      <button onclick="appendNumber('9')">9</button>
-      <button onclick="appendNumber('*')">*</button>
-      <button onclick="appendNumber('0')">0</button>
-      <button onclick="appendNumber('#')">#</button>
-    </div>
-
-    <button class="button-call" onclick="makeCall()">呼叫</button>
-
-    <div class="footer">
-      &copy; 2025 在线客服系统 | 技术支持：在线客服
-    </div>
-
-    <!-- 来电提示弹窗 -->
-    <div class="incoming-call" id="incomingCall" style="display:none;">
-      <h2>来电提示</h2>
-      <div class="caller-id" id="callerId">未知号码</div>
-      <div class="actions">
-        <button class="accept" onclick="acceptCall()">接听</button>
-        <button class="reject" onclick="rejectCall()">拒接</button>
-      </div>
-    </div>
-  </div>
-</body>
-</html>
+</script>
