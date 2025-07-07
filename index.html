@@ -5,177 +5,14 @@
   <title>客服系统首页</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body {
-      font-family: "微软雅黑", sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f0f2f5;
-    }
-
-    .container {
-      max-width: 400px;
-      margin: 50px auto;
-      background: white;
-      padding: 30px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-      border-radius: 12px;
-      text-align: center;
-      position: relative;
-    }
-
-    h1 {
-      color: #333;
-    }
-
-    .info {
-      margin-top: 20px;
-      font-size: 16px;
-      line-height: 1.8;
-    }
-
-    .input-box {
-      margin: 20px 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 10px;
-    }
-
-    input[type="text"] {
-      flex: 1;
-      padding: 12px;
-      font-size: 18px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      text-align: center;
-    }
-
-    .delete-btn {
-      background-color: transparent;
-      border: none;
-      font-size: 24px;
-      cursor: pointer;
-      color: #999;
-    }
-
-    .delete-btn:hover {
-      color: #ff4d4f;
-    }
-
-    .dialpad {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      justify-items: center;
-      margin: 20px auto;
-      width: 260px;
-    }
-
-    .dialpad button {
-      font-size: 32px;
-      padding: 24px 0;
-      width: 80px;
-      border-radius: 10px;
-      border: none;
-      background-color: #1890ff;
-      color: white;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-
-    .dialpad button:hover {
-      background-color: #40a9ff;
-    }
-
-    .button-call {
-      background-color: #ff4d4f;
-      color: white;
-      border: none;
-      padding: 16px 32px;
-      margin-top: 20px;
-      border-radius: 6px;
-      font-size: 20px;
-      font-weight: bold;
-      cursor: pointer;
-      width: 80%;
-    }
-
-    .button-call:hover {
-      background-color: #ff7875;
-    }
-
-    .footer {
-      text-align: center;
-      margin-top: 40px;
-      color: #999;
-      font-size: 14px;
-    }
-
-    /* 来电弹窗样式 */
-    .incoming-call {
-      position: absolute;
-      top: 20px;
-      left: 0;
-      right: 0;
-      margin: auto;
-      width: 100%;
-      max-width: 350px;
-      background-color: #fff;
-      border: 2px solid #1890ff;
-      border-radius: 12px;
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-      z-index: 999;
-      padding: 20px;
-      display: none;
-    }
-
-    .incoming-call h2 {
-      margin: 0;
-      font-size: 20px;
-      color: #1890ff;
-    }
-
-    .caller-id {
-      font-size: 24px;
-      margin: 10px 0;
-      color: #333;
-    }
-
-    .incoming-call .actions {
-      display: flex;
-      justify-content: space-around;
-      margin-top: 20px;
-    }
-
-    .incoming-call .actions button {
-      flex: 1;
-      margin: 0 10px;
-      padding: 14px 0;
-      font-size: 18px;
-      border-radius: 8px;
-      border: none;
-      color: white;
-      cursor: pointer;
-    }
-
-    .accept {
-      background-color: #52c41a;
-    }
-
-    .reject {
-      background-color: #f5222d;
-    }
-
-    .accept:hover {
-      background-color: #73d13d;
-    }
-
-    .reject:hover {
-      background-color: #ff4d4f;
-    }
+    /* 这里放你之前给的css代码 */
   </style>
-
+  <script src="/js/adapter-latest.js"></script>
+  <script src="/js/jssip.min.js"></script>
   <script>
+    let ua = null;
+    let session = null;
+
     function appendNumber(num) {
       const input = document.getElementById("numberInput");
       input.value += num;
@@ -188,38 +25,86 @@
 
     function makeCall() {
       const number = document.getElementById("numberInput").value;
-      if (number) {
-        alert("正在呼叫客服编号：" + number);
-        // TODO: 实际呼叫逻辑
-      } else {
+      if (!number) {
         alert("请输入客服编号");
+        return;
       }
+      if (!ua) {
+        alert("SIP尚未注册");
+        return;
+      }
+      if (session) {
+        alert("当前已有通话，请先挂断");
+        return;
+      }
+      session = ua.call('sip:' + number + '@123.xin.anjre.cn', {
+        mediaConstraints: { audio: true, video: false },
+      });
+      updateCallUI(true);
     }
 
-    function simulateIncomingCall() {
-      const incoming = document.getElementById("incomingCall");
-      const callerId = document.getElementById("callerId");
-      callerId.innerText = "80022";
-      incoming.style.display = "block";
+    function updateCallUI(isCalling) {
+      document.querySelector('.button-call').disabled = isCalling;
+      // 你可以根据需要调整按钮状态
     }
 
     function acceptCall() {
-      alert("已接听来电");
+      if (session) session.answer();
       document.getElementById("incomingCall").style.display = "none";
+      updateCallUI(true);
     }
 
     function rejectCall() {
-      alert("已拒绝来电");
+      if (session) session.terminate();
       document.getElementById("incomingCall").style.display = "none";
+      updateCallUI(false);
+    }
+
+    function setupUA() {
+      if (ua) return;
+      const socket = new JsSIP.WebSocketInterface('wss://123.xin.anjre.cn:8089/ws');
+      ua = new JsSIP.UA({
+        sockets: [socket],
+        uri: 'sip:1001@123.xin.anjre.cn',
+        password: 'Aa6363463@',
+        register: true,
+      });
+
+      ua.on('newRTCSession', e => {
+        if (session) {
+          // 如果已有会话，自动拒绝新呼叫
+          e.session.terminate();
+          return;
+        }
+        session = e.session;
+
+        // 来电时显示弹窗
+        if (session.direction === 'incoming') {
+          document.getElementById("callerId").innerText = session.remote_identity.uri.user || "未知号码";
+          document.getElementById("incomingCall").style.display = "block";
+        }
+
+        session.on('ended', () => {
+          session = null;
+          updateCallUI(false);
+        });
+        session.on('failed', () => {
+          session = null;
+          updateCallUI(false);
+        });
+        session.on('accepted', () => {
+          updateCallUI(true);
+        });
+      });
+
+      ua.start();
     }
 
     window.onload = function () {
-      // 模拟 5 秒后有来电
-      setTimeout(simulateIncomingCall, 5000);
+      setupUA();
     };
   </script>
 </head>
-
 <body>
   <div class="container">
     <h1>欢迎进入客服系统</h1>
@@ -255,7 +140,7 @@
     </div>
 
     <!-- 来电提示弹窗 -->
-    <div class="incoming-call" id="incomingCall">
+    <div class="incoming-call" id="incomingCall" style="display:none;">
       <h2>来电提示</h2>
       <div class="caller-id" id="callerId">未知号码</div>
       <div class="actions">
