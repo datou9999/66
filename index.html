@@ -13,16 +13,16 @@
     }
 
     .container {
-      max-width: 800px;
+      max-width: 400px;
       margin: 50px auto;
       background: white;
       padding: 30px;
       box-shadow: 0 8px 20px rgba(0,0,0,0.1);
       border-radius: 12px;
+      text-align: center;
     }
 
     h1 {
-      text-align: center;
       color: #333;
     }
 
@@ -32,31 +32,58 @@
       line-height: 1.8;
     }
 
-    .button {
-      background-color: #1890ff;
-      color: white;
-      border: none;
-      padding: 16px 32px;
-      margin: 10px auto;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 18px;
-      transition: background-color 0.3s ease;
-      display: block;
+    .input-box {
+      margin: 20px 0;
+    }
+
+    input[type="text"] {
       width: 80%;
-      max-width: 300px;
+      padding: 12px;
+      font-size: 18px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
       text-align: center;
     }
 
-    .button:hover {
+    .dialpad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      justify-items: center;
+      margin: 20px auto;
+      width: 80%;
+    }
+
+    .dialpad button {
+      font-size: 20px;
+      padding: 16px;
+      border-radius: 6px;
+      border: none;
+      background-color: #1890ff;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .dialpad button:hover {
       background-color: #40a9ff;
     }
 
-    .button-primary {
+    .button-call {
       background-color: #ff4d4f;
-      font-size: 22px;
+      color: white;
+      border: none;
+      padding: 16px 32px;
+      margin-top: 20px;
+      border-radius: 6px;
+      font-size: 20px;
       font-weight: bold;
-      padding: 20px 36px;
+      cursor: pointer;
+      width: 80%;
+    }
+
+    .button-call:hover {
+      background-color: #ff7875;
     }
 
     .footer {
@@ -66,6 +93,23 @@
       font-size: 14px;
     }
   </style>
+  <script>
+    function appendNumber(num) {
+      const input = document.getElementById("numberInput");
+      input.value += num;
+    }
+
+    function makeCall() {
+      const number = document.getElementById("numberInput").value;
+      if (number) {
+        // 这里可跳转页面或触发JS拨号逻辑
+        alert("正在呼叫客服编号：" + number);
+        // location.href = "call.html?number=" + encodeURIComponent(number);
+      } else {
+        alert("请输入客服编号");
+      }
+    }
+  </script>
 </head>
 <body>
   <div class="container">
@@ -75,11 +119,26 @@
       <p><strong>当前在线客户：</strong>5人</p>
     </div>
 
-    <!-- 呼叫客服（突出显示） -->
-    <button class="button button-primary" onclick="location.href='call.html'">呼叫客服</button>
+    <div class="input-box">
+      <input type="text" id="numberInput" placeholder="请输入客服编号" readonly />
+    </div>
 
-    <!-- 技术支持 -->
-    <button class="button" onclick="location.href='support.html'">技术支持</button>
+    <div class="dialpad">
+      <button onclick="appendNumber('1')">1</button>
+      <button onclick="appendNumber('2')">2</button>
+      <button onclick="appendNumber('3')">3</button>
+      <button onclick="appendNumber('4')">4</button>
+      <button onclick="appendNumber('5')">5</button>
+      <button onclick="appendNumber('6')">6</button>
+      <button onclick="appendNumber('7')">7</button>
+      <button onclick="appendNumber('8')">8</button>
+      <button onclick="appendNumber('9')">9</button>
+      <button onclick="appendNumber('*')">*</button>
+      <button onclick="appendNumber('0')">0</button>
+      <button onclick="appendNumber('#')">#</button>
+    </div>
+
+    <button class="button-call" onclick="makeCall()">呼叫</button>
 
     <div class="footer">
       &copy; 2025 在线客服系统 | 技术支持：在綫客服
@@ -87,3 +146,4 @@
   </div>
 </body>
 </html>
+
