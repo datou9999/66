@@ -50,18 +50,18 @@
     }
 
     .delete-btn {
-      padding: 12px 14px;
       font-size: 22px;
+      padding: 10px 16px;
       border: none;
-      background-color: #ff9900;
-      color: white;
-      border-radius: 50%;
+      border-radius: 6px;
+      background-color: #ccc;
+      color: #333;
       cursor: pointer;
-      line-height: 1;
+      transition: background-color 0.3s ease;
     }
 
     .delete-btn:hover {
-      background-color: #ffbb33;
+      background-color: #aaa;
     }
 
     .dialpad {
@@ -113,7 +113,6 @@
       font-size: 14px;
     }
   </style>
-
   <script>
     function appendNumber(num) {
       const input = document.getElementById("numberInput");
@@ -129,7 +128,7 @@
       const number = document.getElementById("numberInput").value;
       if (number) {
         alert("正在呼叫客服编号：" + number);
-        // 可在此跳转或调用接口
+        // 可加跳转或 SIP 呼叫逻辑
         // location.href = "call.html?number=" + encodeURIComponent(number);
       } else {
         alert("请输入客服编号");
@@ -137,7 +136,6 @@
     }
   </script>
 </head>
-
 <body>
   <div class="container">
     <h1>欢迎进入客服系统</h1>
@@ -148,7 +146,7 @@
 
     <div class="input-box">
       <input type="text" id="numberInput" placeholder="请输入客服编号" readonly />
-      <button class="delete-btn" onclick="deleteLast()">📞←</button>
+      <button class="delete-btn" onclick="deleteLast()">⌫</button>
     </div>
 
     <div class="dialpad">
