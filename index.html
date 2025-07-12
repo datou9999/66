@@ -1,259 +1,189 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <title>客服系统首页</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    body {
-      font-family: "微软雅黑", sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f0f2f5;
-    }
-
-    .container {
-      max-width: 400px;
-      margin: 50px auto;
-      background: white;
-      padding: 30px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-      border-radius: 12px;
-      text-align: center;
-      position: relative;
-    }
-
-    h1 {
-      color: #333;
-    }
-
-    .info {
-      margin-top: 20px;
-      font-size: 16px;
-      line-height: 1.8;
-    }
-
-    .input-box {
-      margin: 20px 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 10px;
-    }
-
-    input[type="text"] {
-      flex: 1;
-      padding: 12px;
-      font-size: 18px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      text-align: center;
-    }
-
-    .delete-btn {
-      background-color: transparent;
-      border: none;
-      font-size: 24px;
-      cursor: pointer;
-      color: #999;
-    }
-
-    .delete-btn:hover {
-      color: #ff4d4f;
-    }
-
-    .dialpad {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      justify-items: center;
-      margin: 20px auto;
-      width: 260px;
-    }
-
-    .dialpad button {
-      font-size: 32px;
-      padding: 24px 0;
-      width: 80px;
-      border-radius: 10px;
-      border: none;
-      background-color: #1890ff;
-      color: white;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-
-    .dialpad button:hover {
-      background-color: #40a9ff;
-    }
-
-    .button-call {
-      background-color: #ff4d4f;
-      color: white;
-      border: none;
-      padding: 16px 32px;
-      margin-top: 20px;
-      border-radius: 6px;
-      font-size: 20px;
-      font-weight: bold;
-      cursor: pointer;
-      width: 80%;
-    }
-
-    .button-call:hover {
-      background-color: #ff7875;
-    }
-
-    #callStatus {
-      margin-top: 20px;
-      font-size: 18px;
-      color: #333;
-      min-height: 1.5em;
-    }
-  </style>
-
-  <script src="/js/adapter-latest.js"></script>
-  <script src="/js/jssip.min.js"></script>
-
-  <script>
-    let ua = null;
-    let session = null;
-
-    function appendNumber(num) {
-      const input = document.getElementById("numberInput");
-      input.value += num;
-    }
-
-    function deleteNumber() {
-      const input = document.getElementById("numberInput");
-      input.value = input.value.slice(0, -1);
-    }
-
-    function updateStatus(text) {
-      document.getElementById('callStatus').textContent = text;
-    }
-
-    function startUA() {
-      if (ua) return;
-
-      const socket = new JsSIP.WebSocketInterface('wss://123.xin.anjre.cn:8089/ws');
-      const configuration = {
-        sockets: [socket],
-        uri: 'sip:1001@123.xin.anjre.cn',
-        password: 'Aa6363463@',
-        display_name: '网页客户',
-        session_timers: false,
-        register: true
-      };
-
-      ua = new JsSIP.UA(configuration);
-
-      ua.on('registered', () => {
-        updateStatus('SIP 注册成功');
-      });
-
-      ua.on('registrationFailed', e => {
-        updateStatus('SIP 注册失败');
-        console.error('注册失败', e);
-      });
-
-      ua.on('disconnected', () => {
-        updateStatus('SIP 断开连接');
-      });
-
-      ua.on('newRTCSession', e => {
-        session = e.session;
-
-        session.connection.addEventListener('addstream', evt => {
-          const remoteAudio = document.getElementById('audioRemote');
-          if (evt.stream) {
-            remoteAudio.srcObject = evt.stream;
-            remoteAudio.play().catch(console.warn);
-          }
-        });
-
-        session.on('progress', () => updateStatus('呼叫振铃中...'));
-        session.on('accepted', () => updateStatus('通话中'));
-        session.on('ended', () => {
-          updateStatus('通话结束');
-          resetCall();
-        });
-        session.on('failed', () => {
-          updateStatus('通话失败');
-          resetCall();
-        });
-      });
-
-      ua.start();
-    }
-
-    function makeCall() {
-      if (session) {
-        alert('已有通话进行中，请先挂断');
-        return;
-      }
-      const number = document.getElementById("numberInput").value.trim();
-      if (!number) {
-        alert('请输入客服编号');
-        return;
-      }
-
-      startUA();
-
-      updateStatus('正在拨号: ' + number);
-
-      session = ua.call('sip:' + number + '@123.xin.anjre.cn', {
-        mediaConstraints: { audio: true, video: false }
-      });
-    }
-
-    function hangupCall() {
-      if (session) {
-        session.terminate();
-      }
-    }
-
-    function resetCall() {
-      session = null;
-      updateStatus('等待操作');
-      document.getElementById('numberInput').value = '';
-    }
-  </script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>在线客服</title>
+<style>
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    background: #f2f6fc;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+  .container {
+    background: #fff;
+    max-width: 400px;
+    width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    padding: 30px 25px;
+    text-align: center;
+  }
+  h2 {
+    margin: 0 0 20px 0;
+    color: #222;
+  }
+  #callStatus {
+    margin: 15px 0 25px 0;
+    font-size: 16px;
+    color: #555;
+    min-height: 22px;
+  }
+  button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 14px 40px;
+    border-radius: 25px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    outline: none;
+  }
+  button:hover:not(:disabled) {
+    background-color: #0056b3;
+  }
+  button:disabled {
+    background-color: #a1c6ff;
+    cursor: not-allowed;
+  }
+  #hangupButton {
+    background-color: #dc3545;
+    margin-left: 15px;
+  }
+  #hangupButton:hover:not(:disabled) {
+    background-color: #a71d2a;
+  }
+  audio {
+    display: none;
+  }
+</style>
 </head>
-
 <body>
   <div class="container">
-    <h1>欢迎进入客服系统</h1>
-    <div class="info">
-      <p><strong>当前用户：</strong>945266</p>
-      <p><strong>当前在线客户：</strong>5人</p>
-    </div>
-
-    <div class="input-box">
-      <input type="text" id="numberInput" placeholder="请输入客服编号" readonly />
-      <button class="delete-btn" onclick="deleteNumber()">⌫</button>
-    </div>
-
-    <div class="dialpad">
-      <button onclick="appendNumber('1')">1</button>
-      <button onclick="appendNumber('2')">2</button>
-      <button onclick="appendNumber('3')">3</button>
-      <button onclick="appendNumber('4')">4</button>
-      <button onclick="appendNumber('5')">5</button>
-      <button onclick="appendNumber('6')">6</button>
-      <button onclick="appendNumber('7')">7</button>
-      <button onclick="appendNumber('8')">8</button>
-      <button onclick="appendNumber('9')">9</button>
-      <button onclick="appendNumber('*')">*</button>
-      <button onclick="appendNumber('0')">0</button>
-      <button onclick="appendNumber('#')">#</button>
-    </div>
-
-    <button class="button-call" onclick="makeCall()">呼叫</button>
-
-    <div id="callStatus">等待操作</div>
-
+    <h2>在线客服系统</h2>
+    <div id="callStatus">等待呼叫</div>
+    <button id="callButton">📞 呼叫客服</button>
+    <button id="hangupButton" disabled>🛑 挂断</button>
     <audio id="audioRemote" autoplay></audio>
   </div>
+
+  <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jssip@3.0.10/dist/jssip.min.js"></script>
+  <script>
+    (function(){
+      const callBtn = document.getElementById('callButton');
+      const hangupBtn = document.getElementById('hangupButton');
+      const callStatus = document.getElementById('callStatus');
+      const remoteAudio = document.getElementById('audioRemote');
+
+      let ua = null;
+      let session = null;
+
+      function setStatus(text){
+        callStatus.textContent = text;
+      }
+
+      async function getMicPermission(){
+        try {
+          setStatus('请求麦克风权限...');
+          await navigator.mediaDevices.getUserMedia({ audio: true });
+          setStatus('麦克风权限已允许，准备呼叫');
+          callBtn.disabled = false;
+        } catch {
+          setStatus('请允许麦克风权限');
+          alert('请允许麦克风权限，否则无法呼叫客服');
+          callBtn.disabled = true;
+        }
+      }
+
+      function setupUA(){
+        const socket = new JsSIP.WebSocketInterface('wss://121.199.45.239:8089/ws');
+        const config = {
+          sockets: [socket],
+          uri: 'sip:1001@121.199.45.239',
+          password: 'Aa6363463@',
+          session_timers: false,
+          register: true,
+        };
+        ua = new JsSIP.UA(config);
+
+        ua.on('connected', () => {
+          console.log('SIP websocket 已连接');
+        });
+        ua.on('registered', () => {
+          console.log('SIP 已注册');
+          setStatus('准备呼叫');
+          callBtn.disabled = false;
+        });
+        ua.on('registrationFailed', () => {
+          setStatus('注册失败，请检查账号或服务器');
+          callBtn.disabled = true;
+        });
+        ua.on('disconnected', () => {
+          setStatus('网络断开，请刷新页面');
+          callBtn.disabled = true;
+        });
+
+        ua.start();
+      }
+
+      callBtn.addEventListener('click', () => {
+        if(session){
+          setStatus('通话已在进行中');
+          return;
+        }
+        setStatus('呼叫客服中...');
+        session = ua.call('sip:8001@121.199.45.239', {
+          mediaConstraints: { audio: true, video: false }
+        });
+
+        session.connection.addEventListener('addstream', e => {
+          remoteAudio.srcObject = e.stream;
+          remoteAudio.play().catch(() => {});
+        });
+
+        session.on('progress', () => setStatus('正在接通...'));
+        session.on('accepted', () => {
+          setStatus('通话中');
+          hangupBtn.disabled = false;
+          callBtn.disabled = true;
+        });
+        session.on('ended', () => {
+          setStatus('通话结束');
+          hangupBtn.disabled = true;
+          callBtn.disabled = false;
+          session = null;
+        });
+        session.on('failed', () => {
+          setStatus('呼叫失败，请重试');
+          hangupBtn.disabled = true;
+          callBtn.disabled = false;
+          session = null;
+        });
+      });
+
+      hangupBtn.addEventListener('click', () => {
+        if(session){
+          session.terminate();
+          setStatus('通话已挂断');
+          hangupBtn.disabled = true;
+          callBtn.disabled = false;
+          session = null;
+        }
+      });
+
+      // 初始化
+      callBtn.disabled = true;
+      getMicPermission();
+      setupUA();
+    })();
+  </script>
 </body>
 </html>
